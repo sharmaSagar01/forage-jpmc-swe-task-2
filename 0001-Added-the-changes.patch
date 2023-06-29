@@ -1,0 +1,285 @@
+From 60f5f799d2b8bfa065441b4961b72ba0e59b7ba4 Mon Sep 17 00:00:00 2001
+From: sharmaSagar01 <sagaarpkr@gmail.com>
+Date: Mon, 26 Jun 2023 19:36:58 -0400
+Subject: [PATCH] Added the changes
+
+---
+ package-lock.json |  1 +
+ package.json      | 17 +++++++++++--
+ src/App.tsx       | 52 +++++++++++++++++++++++---------------
+ src/Graph.css     |  6 ++---
+ src/Graph.tsx     | 63 ++++++++++++++++++++++++++++++-----------------
+ 5 files changed, 92 insertions(+), 47 deletions(-)
+
+diff --git a/package-lock.json b/package-lock.json
+index 21b4315..9b85d2c 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -7,6 +7,7 @@
+     "": {
+       "name": "bank-merge-co-task-2",
+       "version": "0.1.0",
++      "license": "ISC",
+       "dependencies": {
+         "@finos/perspective": "^1.6.2",
+         "@finos/perspective-viewer": "^1.6.2",
+diff --git a/package.json b/package.json
+index ca234e9..3bbd3a4 100644
+--- a/package.json
++++ b/package.json
+@@ -18,7 +18,7 @@
+     "react-scripts": "2.1.3"
+   },
+   "scripts": {
+-    "start": "react-scripts --openssl-legacy-provider start",
++    "start": "react-scripts start",
+     "build": "react-scripts build",
+     "test": "react-scripts test",
+     "eject": "react-scripts eject"
+@@ -36,5 +36,18 @@
+     "awesome-typescript-loader": "^5.2.1",
+     "source-map-loader": "^0.2.4",
+     "typescript": "^3.2.4"
+-  }
++  },
++  "description": "Starter repo for task 2 of JPMC's Forage program",
++  "main": "index.js",
++  "repository": {
++    "type": "git",
++    "url": "git+https://github.com/sharmaSagar01/forage-jpmc-swe-task-2.git"
++  },
++  "keywords": [],
++  "author": "",
++  "license": "ISC",
++  "bugs": {
++    "url": "https://github.com/sharmaSagar01/forage-jpmc-swe-task-2/issues"
++  },
++  "homepage": "https://github.com/sharmaSagar01/forage-jpmc-swe-task-2#readme"
+ }
+diff --git a/src/App.tsx b/src/App.tsx
+index 0728518..11899c6 100755
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -1,13 +1,14 @@
+-import React, { Component } from 'react';
+-import DataStreamer, { ServerRespond } from './DataStreamer';
+-import Graph from './Graph';
+-import './App.css';
++import React, { Component } from "react";
++import DataStreamer, { ServerRespond } from "./DataStreamer";
++import Graph from "./Graph";
++import "./App.css";
+ 
+ /**
+  * State declaration for <App />
+  */
+ interface IState {
+-  data: ServerRespond[],
++  data: ServerRespond[];
++  showGraph: boolean;
+ }
+ 
+ /**
+@@ -22,6 +23,7 @@ class App extends Component<{}, IState> {
+       // data saves the server responds.
+       // We use this state to parse data down to the child element (Graph) as element property
+       data: [],
++      showGraph: false,
+     };
+   }
+ 
+@@ -29,18 +31,28 @@ class App extends Component<{}, IState> {
+    * Render Graph react component with state.data parse as property data
+    */
+   renderGraph() {
+-    return (<Graph data={this.state.data}/>)
++    if (this.state.showGraph) {
++      return <Graph data={this.state.data} />;
++    }
+   }
+ 
+   /**
+    * Get new data from server and update the state with the new data
+    */
+   getDataFromServer() {
+-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
+-      // Update the state by creating a new array of data that consists of
+-      // Previous data in the state and the new data from server
+-      this.setState({ data: [...this.state.data, ...serverResponds] });
+-    });
++    let x = 0;
++    const interval = setInterval(() => {
++      DataStreamer.getData((serverResponds: ServerRespond[]) => {
++        this.setState({
++          data: serverResponds,
++          showGraph: true,
++        });
++      });
++      x++;
++      if (x > 1000) {
++        clearInterval(interval);
++      }
++    }, 100);
+   }
+ 
+   /**
+@@ -49,25 +61,25 @@ class App extends Component<{}, IState> {
+   render() {
+     return (
+       <div className="App">
+-        <header className="App-header">
+-          Bank & Merge Co Task 2
+-        </header>
++        <header className="App-header">Bank & Merge Co Task 2</header>
+         <div className="App-content">
+-          <button className="btn btn-primary Stream-button"
++          <button
++            className="btn btn-primary Stream-button"
+             // when button is click, our react app tries to request
+             // new data from the server.
+             // As part of your task, update the getDataFromServer() function
+             // to keep requesting the data every 100ms until the app is closed
+             // or the server does not return anymore data.
+-            onClick={() => {this.getDataFromServer()}}>
++            onClick={() => {
++              this.getDataFromServer();
++            }}
++          >
+             Start Streaming Data
+           </button>
+-          <div className="Graph">
+-            {this.renderGraph()}
+-          </div>
++          <div className="Graph">{this.renderGraph()}</div>
+         </div>
+       </div>
+-    )
++    );
+   }
+ }
+ 
+diff --git a/src/Graph.css b/src/Graph.css
+index c77c560..8374b18 100644
+--- a/src/Graph.css
++++ b/src/Graph.css
+@@ -1,4 +1,4 @@
+ perspective-viewer {
+-  height: 50vh;
+-  width: 700px;
+-}
+\ No newline at end of file
++  height: 60vh;
++  width: 800px;
++}
+diff --git a/src/Graph.tsx b/src/Graph.tsx
+index 3b2a7da..35cd4b0 100644
+--- a/src/Graph.tsx
++++ b/src/Graph.tsx
+@@ -1,21 +1,21 @@
+-import React, { Component } from 'react';
+-import { Table } from '@finos/perspective';
+-import { ServerRespond } from './DataStreamer';
+-import './Graph.css';
++import React, { Component } from "react";
++import { Table } from "@finos/perspective";
++import { ServerRespond } from "./DataStreamer";
++import "./Graph.css";
+ 
+ /**
+  * Props declaration for <Graph />
+  */
+ interface IProps {
+-  data: ServerRespond[],
++  data: ServerRespond[];
+ }
+ 
+ /**
+  * Perspective library adds load to HTMLElement prototype.
+  * This interface acts as a wrapper for Typescript compiler.
+  */
+-interface PerspectiveViewerElement {
+-  load: (table: Table) => void,
++interface PerspectiveViewerElement extends HTMLElement {
++  load: (table: Table) => void;
+ }
+ 
+ /**
+@@ -27,18 +27,20 @@ class Graph extends Component<IProps, {}> {
+   table: Table | undefined;
+ 
+   render() {
+-    return React.createElement('perspective-viewer');
++    return React.createElement("perspective-viewer");
+   }
+ 
+   componentDidMount() {
+     // Get element to attach the table from the DOM.
+-    const elem: PerspectiveViewerElement = document.getElementsByTagName('perspective-viewer')[0] as unknown as PerspectiveViewerElement;
++    const elem = (document.getElementsByTagName(
++      "perspective-viewer"
++    )[0] as unknown) as PerspectiveViewerElement;
+ 
+     const schema = {
+-      stock: 'string',
+-      top_ask_price: 'float',
+-      top_bid_price: 'float',
+-      timestamp: 'date',
++      stock: "string",
++      top_ask_price: "float",
++      top_bid_price: "float",
++      timestamp: "date",
+     };
+ 
+     if (window.perspective && window.perspective.worker()) {
+@@ -49,6 +51,21 @@ class Graph extends Component<IProps, {}> {
+ 
+       // Add more Perspective configurations here.
+       elem.load(this.table);
++      elem.setAttribute("view", "y_line");
++      elem.setAttribute("column-pivots", '["stock"]');
++      elem.setAttribute("row-pivots", '["timestamp"]');
++      elem.setAttribute("columns", '["top_ask_price"]');
++      elem.setAttribute(
++        "aggregates",
++        `
++      {
++      "stock":"distinct cound",
++      "top_ask_price": "avg",
++      "top_bid_price":"avg",
++      "timestamp":"distinct count"
++      }
++      `
++      );
+     }
+   }
+ 
+@@ -57,15 +74,17 @@ class Graph extends Component<IProps, {}> {
+     if (this.table) {
+       // As part of the task, you need to fix the way we update the data props to
+       // avoid inserting duplicated entries into Perspective table again.
+-      this.table.update(this.props.data.map((el: any) => {
+-        // Format the data from ServerRespond to the schema
+-        return {
+-          stock: el.stock,
+-          top_ask_price: el.top_ask && el.top_ask.price || 0,
+-          top_bid_price: el.top_bid && el.top_bid.price || 0,
+-          timestamp: el.timestamp,
+-        };
+-      }));
++      this.table.update(
++        this.props.data.map((el: any) => {
++          // Format the data from ServerRespond to the schema
++          return {
++            stock: el.stock,
++            top_ask_price: (el.top_ask && el.top_ask.price) || 0,
++            top_bid_price: (el.top_bid && el.top_bid.price) || 0,
++            timestamp: el.timestamp,
++          };
++        })
++      );
+     }
+   }
+ }
+-- 
+2.34.1
+
